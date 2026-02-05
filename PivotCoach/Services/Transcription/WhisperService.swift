@@ -10,8 +10,10 @@ class WhisperService: ObservableObject {
     
     private var whisperKit: WhisperKit?
     private var audioBuffer: [Float] = []
-    private let bufferLock = NSLock()
     private let sampleRate = 16000
+    
+    // Use actor for thread-safe buffer management
+    private let bufferManager = AudioBufferManager()
     
     // MARK: - Initialization
     
@@ -32,35 +34,18 @@ class WhisperService: ObservableObject {
     
     func processAudioStream(_ stream: AsyncStream<AVAudioPCMBuffer>) async {
         for await buffer in stream {
-            appendToBuffer(buffer)
+            await bufferManager.append(buffer)
             
             // Transcrire quand on a ~1.5 secondes d'audio
-            if audioBuffer.count >= Int(Double(sampleRate) * 1.5) {
+            let count = await bufferManager.count
+            if count >= Int(Double(sampleRate) * 1.5) {
                 await transcribeBuffer()
             }
         }
     }
     
-    private func appendToBuffer(_ buffer: AVAudioPCMBuffer) {
-        guard let channelData = buffer.floatChannelData?[0] else { return }
-        let frameCount = Int(buffer.frameLength)
-        
-        bufferLock.lock()
-        for i in 0..<frameCount {
-            audioBuffer.append(channelData[i])
-        }
-        bufferLock.unlock()
-    }
-    
     private func transcribeBuffer() async {
-        bufferLock.lock()
-        let samples = Array(audioBuffer)
-        // Sliding window: garder 0.5s d'overlap pour continuité
-        let overlapSamples = sampleRate / 2
-        if audioBuffer.count > overlapSamples {
-            audioBuffer = Array(audioBuffer.suffix(overlapSamples))
-        }
-        bufferLock.unlock()
+        let samples = await bufferManager.getSamplesAndTrim(keepLast: sampleRate / 2)
         
         guard let whisper = whisperKit, !samples.isEmpty else { return }
         
@@ -68,8 +53,8 @@ class WhisperService: ObservableObject {
             let results = try await whisper.transcribe(
                 audioArray: samples,
                 decodeOptions: .init(
-                    language: "fr",
                     task: .transcribe,
+                    language: "fr",
                     temperatureFallbackCount: 3,
                     compressionRatioThreshold: 2.4,
                     logProbThreshold: -1.0,
@@ -78,7 +63,7 @@ class WhisperService: ObservableObject {
                 )
             )
             
-            if let text = results.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+            if let text = results.first?.text?.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines),
                !text.isEmpty,
                !isNoiseOrSilence(text) {
                 latestTranscript = text
@@ -99,10 +84,42 @@ class WhisperService: ObservableObject {
     }
     
     func reset() {
-        bufferLock.lock()
-        audioBuffer.removeAll()
-        bufferLock.unlock()
+        Task {
+            await bufferManager.clear()
+        }
         latestTranscript = ""
         fullTranscript = ""
+    }
+}
+
+// MARK: - Thread-safe Audio Buffer Manager
+
+private actor AudioBufferManager {
+    private var buffer: [Float] = []
+    
+    var count: Int {
+        buffer.count
+    }
+    
+    func append(_ pcmBuffer: AVAudioPCMBuffer) {
+        guard let channelData = pcmBuffer.floatChannelData?[0] else { return }
+        let frameCount = Int(pcmBuffer.frameLength)
+        
+        for i in 0..<frameCount {
+            buffer.append(channelData[i])
+        }
+    }
+    
+    func getSamplesAndTrim(keepLast: Int) -> [Float] {
+        let samples = Array(buffer)
+        // Sliding window: garder keepLast samples d'overlap
+        if buffer.count > keepLast {
+            buffer = Array(buffer.suffix(keepLast))
+        }
+        return samples
+    }
+    
+    func clear() {
+        buffer.removeAll()
     }
 }

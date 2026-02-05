@@ -10,37 +10,52 @@ class SystemAudioCapture: NSObject, ObservableObject {
     private var stream: SCStream?
     private var continuation: AsyncStream<AVAudioPCMBuffer>.Continuation?
     
-    var audioStream: AsyncStream<AVAudioPCMBuffer> {
+    nonisolated var audioStream: AsyncStream<AVAudioPCMBuffer> {
         AsyncStream { continuation in
-            self.continuation = continuation
+            Task { @MainActor in
+                self.continuation = continuation
+            }
         }
     }
     
     func startCapture() async throws {
         guard !isCapturing else { return }
         
-        // Obtenir le contenu disponible
+        // Obtenir le contenu partageable
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
         
         guard let display = content.displays.first else {
             throw CaptureError.noDisplay
         }
         
-        // Filtre: capturer tout l'écran (inclut l'audio système)
+        // Filtre: capturer tout l'audio système
         let filter = SCContentFilter(display: display, excludingApplications: [], exceptingWindows: [])
         
-        // Configuration audio
+        // Configuration
         let config = SCStreamConfiguration()
         config.capturesAudio = true
-        config.excludesCurrentProcessAudio = true  // Ne pas capturer notre propre app
-        config.sampleRate = 16000                   // 16kHz pour Whisper
-        config.channelCount = 1                      // Mono
+        config.excludesCurrentProcessAudio = true
+        config.sampleRate = 16000  // 16kHz pour Whisper
+        config.channelCount = 1     // Mono
         
-        // Créer le stream
-        stream = SCStream(filter: filter, configuration: config, delegate: self)
-        try stream?.addStreamOutput(self, type: .audio, sampleHandlerQueue: .global(qos: .userInteractive))
+        // Créer et démarrer le stream
+        let streamDelegate = StreamDelegate { [weak self] in
+            Task { @MainActor in
+                self?.isCapturing = false
+            }
+        }
         
+        let streamOutput = StreamOutput { [weak self] buffer, level in
+            Task { @MainActor in
+                self?.audioLevel = level
+                self?.continuation?.yield(buffer)
+            }
+        }
+        
+        stream = SCStream(filter: filter, configuration: config, delegate: streamDelegate)
+        try stream?.addStreamOutput(streamOutput, type: .audio, sampleHandlerQueue: .global(qos: .userInteractive))
         try await stream?.startCapture()
+        
         isCapturing = true
     }
     
@@ -53,37 +68,44 @@ class SystemAudioCapture: NSObject, ObservableObject {
     }
 }
 
-// MARK: - SCStreamDelegate
+// MARK: - Stream Delegate
 
-extension SystemAudioCapture: SCStreamDelegate {
-    nonisolated func stream(_ stream: SCStream, didStopWithError error: Error) {
+private class StreamDelegate: NSObject, SCStreamDelegate {
+    let onStop: () -> Void
+    
+    init(onStop: @escaping () -> Void) {
+        self.onStop = onStop
+    }
+    
+    func stream(_ stream: SCStream, didStopWithError error: Error) {
         print("❌ Stream stopped with error: \(error)")
-        Task { @MainActor in
-            self.isCapturing = false
-        }
+        onStop()
     }
 }
 
-// MARK: - SCStreamOutput
+// MARK: - Stream Output
 
-extension SystemAudioCapture: SCStreamOutput {
-    nonisolated func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
+private class StreamOutput: NSObject, SCStreamOutput {
+    let onBuffer: (AVAudioPCMBuffer, Float) -> Void
+    
+    init(onBuffer: @escaping (AVAudioPCMBuffer, Float) -> Void) {
+        self.onBuffer = onBuffer
+    }
+    
+    func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
         guard type == .audio else { return }
         
         // Convertir CMSampleBuffer → AVAudioPCMBuffer
         guard let pcmBuffer = sampleBuffer.toPCMBuffer() else { return }
         
         // Calculer le niveau audio
-        let level = calculateRMS(pcmBuffer)
-        Task { @MainActor in
-            self.audioLevel = level
-        }
+        let level = Self.calculateRMS(pcmBuffer)
         
-        // Envoyer au stream
-        continuation?.yield(pcmBuffer)
+        // Callback
+        onBuffer(pcmBuffer, level)
     }
     
-    private func calculateRMS(_ buffer: AVAudioPCMBuffer) -> Float {
+    private static func calculateRMS(_ buffer: AVAudioPCMBuffer) -> Float {
         guard let channelData = buffer.floatChannelData?[0] else { return 0 }
         let frameCount = Int(buffer.frameLength)
         guard frameCount > 0 else { return 0 }
