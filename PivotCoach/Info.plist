@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>Pivot Coach</string>
+    <key>CFBundleIdentifier</key>
+    <string>ca.pivotapp.coach</string>
+    <key>CFBundleVersion</key>
+    <string>1.0</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleExecutable</key>
+    <string>PivotCoach</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>13.0</string>
+    <key>LSUIElement</key>
+    <false/>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Pivot Coach a besoin du microphone pour la transcription vocale en temps réel.</string>
+    <key>NSScreenCaptureUsageDescription</key>
+    <string>Pivot Coach a besoin de l'enregistrement d'écran pour capturer l'audio des appels.</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Pivot Coach utilise l'automatisation pour l'intégration avec d'autres apps.</string>
+</dict>
+</plist>
