@@ -6,14 +6,14 @@ actor OllamaService {
     
     // MARK: - Request/Response Types
     
-    struct GenerateRequest: Codable {
+    struct GenerateRequest: Codable, Sendable {
         let model: String
         let prompt: String
         let system: String?
         let stream: Bool
         let options: Options?
         
-        struct Options: Codable {
+        struct Options: Codable, Sendable {
             let temperature: Double?
             let num_predict: Int?
             let top_p: Double?
@@ -21,15 +21,15 @@ actor OllamaService {
         }
     }
     
-    struct GenerateResponse: Codable {
+    struct GenerateResponse: Codable, Sendable {
         let response: String
         let done: Bool
     }
     
-    struct TagsResponse: Codable {
+    struct TagsResponse: Codable, Sendable {
         let models: [Model]
         
-        struct Model: Codable {
+        struct Model: Codable, Sendable {
             let name: String
         }
     }
@@ -152,7 +152,7 @@ actor OllamaService {
 
 // MARK: - Errors
 
-enum OllamaError: Error, LocalizedError {
+enum OllamaError: Error, LocalizedError, Sendable {
     case notAvailable
     case requestFailed
     case invalidResponse

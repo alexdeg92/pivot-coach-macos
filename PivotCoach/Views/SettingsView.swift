@@ -49,9 +49,12 @@ struct SettingsView: View {
     
     private func loadModels() async {
         isLoadingModels = true
-        let models = await OllamaService().listModels()
-        availableModels = models.isEmpty ? ["qwen2.5:7b-instruct-q4_K_M"] : models
-        isLoadingModels = false
+        let service = OllamaService()
+        let models = await service.listModels()
+        await MainActor.run {
+            availableModels = models.isEmpty ? ["qwen2.5:7b-instruct-q4_K_M"] : models
+            isLoadingModels = false
+        }
     }
 }
 

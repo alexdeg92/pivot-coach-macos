@@ -3,18 +3,17 @@ import SwiftUI
 @main
 struct PivotCoachApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @StateObject private var coachVM = CoachViewModel()
     
     var body: some Scene {
         // Menu bar icon
         MenuBarExtra("Pivot Coach", systemImage: "waveform.circle.fill") {
-            MenuBarView(viewModel: coachVM)
+            MenuBarView(viewModel: CoachViewModel.shared)
         }
         .menuBarExtraStyle(.window)
         
         // Settings window
         Settings {
-            SettingsView(viewModel: coachVM)
+            SettingsView(viewModel: CoachViewModel.shared)
         }
     }
 }

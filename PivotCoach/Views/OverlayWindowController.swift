@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 
+@MainActor
 class OverlayWindowController {
     private var panel: NSPanel!
     private var hostingView: NSHostingView<OverlayView>!

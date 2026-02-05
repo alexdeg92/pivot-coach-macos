@@ -1,10 +1,12 @@
 import AppKit
 import Carbon
 
+@MainActor
 class KeyboardShortcuts {
     static let shared = KeyboardShortcuts()
     
     private var eventHandler: EventHandlerRef?
+    private static var pendingHotKeyId: UInt32 = 0
     
     func register() {
         // Enregistrer les hotkeys globaux
@@ -18,7 +20,7 @@ class KeyboardShortcuts {
         gMyHotKeyID.id = 1
         
         // Cmd+Shift+L (keycode 37 = L)
-        var status = RegisterEventHotKey(
+        let status = RegisterEventHotKey(
             UInt32(kVK_ANSI_L),
             UInt32(cmdKey | shiftKey),
             gMyHotKeyID,
@@ -46,21 +48,10 @@ class KeyboardShortcuts {
                 &hkCom
             )
             
-            Task { @MainActor in
-                switch hkCom.id {
-                case 1: // Toggle listen
-                    let vm = CoachViewModel.shared
-                    if vm.isListening {
-                        await vm.stopListening()
-                    } else {
-                        await vm.startListening()
-                    }
-                case 2: // Toggle overlay
-                    CoachViewModel.shared.toggleOverlay()
-                case 3: // Copy suggestion
-                    CoachViewModel.shared.copySuggestion()
-                default:
-                    break
+            // Dispatch to main actor using DispatchQueue
+            DispatchQueue.main.async {
+                Task { @MainActor in
+                    await KeyboardShortcuts.handleHotKey(id: hkCom.id)
                 }
             }
             
@@ -75,6 +66,24 @@ class KeyboardShortcuts {
             nil,
             &eventHandler
         )
+    }
+    
+    private static func handleHotKey(id: UInt32) async {
+        switch id {
+        case 1: // Toggle listen
+            let vm = CoachViewModel.shared
+            if vm.isListening {
+                await vm.stopListening()
+            } else {
+                await vm.startListening()
+            }
+        case 2: // Toggle overlay
+            CoachViewModel.shared.toggleOverlay()
+        case 3: // Copy suggestion
+            CoachViewModel.shared.copySuggestion()
+        default:
+            break
+        }
     }
     
     func unregister() {

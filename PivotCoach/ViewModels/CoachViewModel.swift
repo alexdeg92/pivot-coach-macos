@@ -38,7 +38,10 @@ class CoachViewModel: ObservableObject {
         // Audio level
         audioCapture.$audioLevel
             .receive(on: DispatchQueue.main)
-            .assign(to: &$audioLevel)
+            .sink { [weak self] level in
+                self?.audioLevel = level
+            }
+            .store(in: &cancellables)
         
         // Transcription → Process
         whisperService.$latestTranscript

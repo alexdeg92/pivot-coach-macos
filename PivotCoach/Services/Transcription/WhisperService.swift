@@ -9,7 +9,6 @@ class WhisperService: ObservableObject {
     @Published var fullTranscript = ""
     
     private var whisperKit: WhisperKit?
-    private var audioBuffer: [Float] = []
     private let sampleRate = 16000
     
     // Use actor for thread-safe buffer management

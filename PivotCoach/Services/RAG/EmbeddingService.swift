@@ -1,6 +1,6 @@
 import NaturalLanguage
 
-class EmbeddingService {
+final class EmbeddingService: @unchecked Sendable {
     private let embedding: NLEmbedding?
     
     init() {

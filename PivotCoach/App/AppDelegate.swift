@@ -1,6 +1,7 @@
 import AppKit
 import AVFoundation
 
+@MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     var overlayController: OverlayWindowController?
     

@@ -2,9 +2,10 @@ import Foundation
 import SQLite3
 import NaturalLanguage
 
-class VectorStore {
+final class VectorStore: @unchecked Sendable {
     private var db: OpaquePointer?
     private let embeddingService = EmbeddingService()
+    private let queue = DispatchQueue(label: "com.pivotcoach.vectorstore", qos: .userInitiated)
     
     init(dbPath: String) throws {
         if sqlite3_open(dbPath, &db) != SQLITE_OK {
@@ -91,12 +92,16 @@ class VectorStore {
         
         var sql = "SELECT content, embedding FROM documents"
         if let contactId = contactId {
-            sql += " WHERE contact_id = '\(contactId)'"
+            sql += " WHERE contact_id = ?"
         }
         
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return [] }
         defer { sqlite3_finalize(stmt) }
+        
+        if let contactId = contactId {
+            sqlite3_bind_text(stmt, 1, (contactId as NSString).utf8String, -1, nil)
+        }
         
         var results: [(content: String, score: Double)] = []
         
@@ -177,12 +182,21 @@ class VectorStore {
         var contacts: [Contact] = []
         
         while sqlite3_step(stmt) == SQLITE_ROW {
-            let id = String(cString: sqlite3_column_text(stmt, 0))
-            let firstName = String(cString: sqlite3_column_text(stmt, 1))
-            let lastName = String(cString: sqlite3_column_text(stmt, 2))
-            let email = String(cString: sqlite3_column_text(stmt, 3))
-            let company = String(cString: sqlite3_column_text(stmt, 4))
-            let phone = String(cString: sqlite3_column_text(stmt, 5))
+            guard let idPtr = sqlite3_column_text(stmt, 0),
+                  let firstNamePtr = sqlite3_column_text(stmt, 1),
+                  let lastNamePtr = sqlite3_column_text(stmt, 2),
+                  let emailPtr = sqlite3_column_text(stmt, 3),
+                  let companyPtr = sqlite3_column_text(stmt, 4),
+                  let phonePtr = sqlite3_column_text(stmt, 5) else {
+                continue
+            }
+            
+            let id = String(cString: idPtr)
+            let firstName = String(cString: firstNamePtr)
+            let lastName = String(cString: lastNamePtr)
+            let email = String(cString: emailPtr)
+            let company = String(cString: companyPtr)
+            let phone = String(cString: phonePtr)
             let dealStage = sqlite3_column_text(stmt, 6).map { String(cString: $0) }
             
             contacts.append(Contact(
@@ -202,7 +216,7 @@ class VectorStore {
 
 // MARK: - Errors
 
-enum VectorStoreError: Error, LocalizedError {
+enum VectorStoreError: Error, LocalizedError, Sendable {
     case openFailed
     case queryFailed(String)
     

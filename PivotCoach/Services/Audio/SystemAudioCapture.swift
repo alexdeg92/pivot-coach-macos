@@ -9,13 +9,17 @@ class SystemAudioCapture: NSObject, ObservableObject {
     
     private var stream: SCStream?
     private var continuation: AsyncStream<AVAudioPCMBuffer>.Continuation?
+    private var _audioStream: AsyncStream<AVAudioPCMBuffer>?
     
-    nonisolated var audioStream: AsyncStream<AVAudioPCMBuffer> {
-        AsyncStream { continuation in
-            Task { @MainActor in
-                self.continuation = continuation
-            }
+    var audioStream: AsyncStream<AVAudioPCMBuffer> {
+        if let existing = _audioStream {
+            return existing
         }
+        let stream = AsyncStream<AVAudioPCMBuffer> { continuation in
+            self.continuation = continuation
+        }
+        _audioStream = stream
+        return stream
     }
     
     func startCapture() async throws {
@@ -70,10 +74,10 @@ class SystemAudioCapture: NSObject, ObservableObject {
 
 // MARK: - Stream Delegate
 
-private class StreamDelegate: NSObject, SCStreamDelegate {
-    let onStop: () -> Void
+private final class StreamDelegate: NSObject, SCStreamDelegate, @unchecked Sendable {
+    let onStop: @Sendable () -> Void
     
-    init(onStop: @escaping () -> Void) {
+    init(onStop: @escaping @Sendable () -> Void) {
         self.onStop = onStop
     }
     
@@ -85,10 +89,10 @@ private class StreamDelegate: NSObject, SCStreamDelegate {
 
 // MARK: - Stream Output
 
-private class StreamOutput: NSObject, SCStreamOutput {
-    let onBuffer: (AVAudioPCMBuffer, Float) -> Void
+private final class StreamOutput: NSObject, SCStreamOutput, @unchecked Sendable {
+    let onBuffer: @Sendable (AVAudioPCMBuffer, Float) -> Void
     
-    init(onBuffer: @escaping (AVAudioPCMBuffer, Float) -> Void) {
+    init(onBuffer: @escaping @Sendable (AVAudioPCMBuffer, Float) -> Void) {
         self.onBuffer = onBuffer
     }
     
@@ -156,7 +160,7 @@ extension CMSampleBuffer {
 
 // MARK: - Errors
 
-enum CaptureError: Error, LocalizedError {
+enum CaptureError: Error, LocalizedError, Sendable {
     case noDisplay
     case permissionDenied
     case streamFailed
