@@ -180,7 +180,7 @@ struct PivotKnowledgeBase {
     }
     
     struct Objection: Identifiable, Sendable {
-        let id: UUID
+        let id: UUID = UUID()
         let category: String
         let objection: String
         let objectionFr: String
@@ -188,17 +188,6 @@ struct PivotKnowledgeBase {
         let rebuttalFr: String
         let followUpQuestions: [String]
         let followUpQuestionsFr: [String]
-        
-        init(category: String, objection: String, objectionFr: String, rebuttal: String, rebuttalFr: String, followUpQuestions: [String], followUpQuestionsFr: [String]) {
-            self.id = UUID()
-            self.category = category
-            self.objection = objection
-            self.objectionFr = objectionFr
-            self.rebuttal = rebuttal
-            self.rebuttalFr = rebuttalFr
-            self.followUpQuestions = followUpQuestions
-            self.followUpQuestionsFr = followUpQuestionsFr
-        }
     }
     
     struct SuccessStory: Identifiable, Sendable {
