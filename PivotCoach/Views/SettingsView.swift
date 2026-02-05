@@ -4,7 +4,6 @@ struct SettingsView: View {
     @ObservedObject var viewModel: CoachViewModel
     @State private var selectedModel = "qwen2.5:7b-instruct-q4_K_M"
     @State private var availableModels: [String] = []
-    @State private var hubspotClientId = ""
     @State private var isLoadingModels = false
     
     var body: some View {
@@ -24,15 +23,6 @@ struct SettingsView: View {
             )
             .tabItem {
                 Label("Modèle IA", systemImage: "brain")
-            }
-            
-            // HubSpot
-            HubSpotSettingsView(
-                clientId: $hubspotClientId,
-                isConnected: viewModel.hubspotConnected
-            )
-            .tabItem {
-                Label("HubSpot", systemImage: "link")
             }
             
             // Raccourcis
@@ -90,18 +80,18 @@ struct GeneralSettingsView: View {
                 }
                 
                 HStack {
-                    Text("HubSpot")
+                    Text("WhisperKit")
                     Spacer()
-                    if viewModel.hubspotConnected {
+                    if viewModel.isReady {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(.green)
-                        Text("Connecté")
+                        Text("Prêt")
                             .foregroundColor(.green)
                     } else {
-                        Image(systemName: "minus.circle.fill")
-                            .foregroundColor(.gray)
-                        Text("Non connecté")
-                            .foregroundColor(.gray)
+                        Image(systemName: "clock.fill")
+                            .foregroundColor(.orange)
+                        Text("Chargement...")
+                            .foregroundColor(.orange)
                     }
                 }
             }
@@ -209,49 +199,6 @@ struct ModelRecommendation: View {
                 .background(Color.blue.opacity(0.1))
                 .cornerRadius(4)
         }
-    }
-}
-
-// MARK: - HubSpot Settings
-
-struct HubSpotSettingsView: View {
-    @Binding var clientId: String
-    let isConnected: Bool
-    
-    var body: some View {
-        Form {
-            Section("Connexion") {
-                if isConnected {
-                    HStack {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
-                        Text("Connecté à HubSpot")
-                        Spacer()
-                        Button("Déconnecter") {
-                            // TODO: Disconnect
-                        }
-                        .foregroundColor(.red)
-                    }
-                } else {
-                    TextField("Client ID HubSpot", text: $clientId)
-                    Button("Connecter HubSpot") {
-                        // TODO: Start OAuth flow
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-            }
-            
-            Section {
-                Text("Pour obtenir un Client ID:")
-                    .font(.headline)
-                Link("1. Créer une app sur HubSpot Developer",
-                     destination: URL(string: "https://developers.hubspot.com/")!)
-                Text("2. Copier le Client ID dans le champ ci-dessus")
-                Text("3. Cliquer sur Connecter")
-            }
-        }
-        .formStyle(.grouped)
-        .padding()
     }
 }
 
