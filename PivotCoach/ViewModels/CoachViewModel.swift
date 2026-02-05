@@ -249,8 +249,17 @@ class CoachViewModel: ObservableObject {
     }
     
     func toggleOverlay() {
+        print("🔄 toggleOverlay appelé")
         if let appDelegate = NSApp.delegate as? AppDelegate {
-            appDelegate.overlayController?.toggle()
+            print("✅ AppDelegate trouvé")
+            if let controller = appDelegate.overlayController {
+                print("✅ OverlayController trouvé, toggle...")
+                controller.toggle()
+            } else {
+                print("❌ overlayController est nil!")
+            }
+        } else {
+            print("❌ AppDelegate non trouvé")
         }
     }
     

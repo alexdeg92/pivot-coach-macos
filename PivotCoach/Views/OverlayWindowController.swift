@@ -8,6 +8,9 @@ class OverlayWindowController {
     
     init() {
         setupPanel()
+        print("✅ OverlayWindowController initialisé")
+        // Afficher automatiquement au lancement
+        show()
     }
     
     private func setupPanel() {
@@ -50,14 +53,18 @@ class OverlayWindowController {
     }
     
     func show() {
+        print("📺 Overlay show()")
         panel.orderFrontRegardless()
+        panel.makeKeyAndOrderFront(nil)
     }
     
     func hide() {
+        print("📺 Overlay hide()")
         panel.orderOut(nil)
     }
     
     func toggle() {
+        print("📺 Overlay toggle() - isVisible: \(panel.isVisible)")
         if panel.isVisible {
             hide()
         } else {
