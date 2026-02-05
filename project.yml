@@ -1,0 +1,43 @@
+name: PivotCoach
+options:
+  bundleIdPrefix: ca.pivotapp
+  deploymentTarget:
+    macOS: "13.0"
+  xcodeVersion: "15.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MACOSX_DEPLOYMENT_TARGET: "13.0"
+    CODE_SIGN_STYLE: Automatic
+    PRODUCT_NAME: "Pivot Coach"
+
+targets:
+  PivotCoach:
+    type: application
+    platform: macOS
+    sources:
+      - path: PivotCoach
+        excludes:
+          - "**/*.md"
+    info:
+      path: PivotCoach/Info.plist
+      properties:
+        CFBundleDisplayName: Pivot Coach
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "1"
+        LSUIElement: true
+        NSMicrophoneUsageDescription: "Pivot Coach utilise le micro pour transcrire les conversations."
+        NSScreenCaptureUsageDescription: "Pivot Coach capture l'audio système pour transcrire les appels."
+        NSPrincipalClass: NSApplication
+    settings:
+      ENABLE_HARDENED_RUNTIME: NO
+      CODE_SIGN_ENTITLEMENTS: ""
+    dependencies:
+      - package: WhisperKit
+
+packages:
+  WhisperKit:
+    url: https://github.com/argmaxinc/WhisperKit
+    from: "0.9.0"

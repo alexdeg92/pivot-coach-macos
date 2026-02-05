@@ -2,6 +2,35 @@
 
 Application macOS de coaching commercial IA en temps réel.
 
+## 🚀 Installation rapide
+
+```bash
+# 1. Clone
+git clone https://github.com/alexdeg92/pivot-coach-macos.git
+cd pivot-coach-macos
+
+# 2. Installe XcodeGen si pas déjà fait
+brew install xcodegen
+
+# 3. Génère le projet Xcode
+xcodegen
+
+# 4. Ouvre dans Xcode
+open PivotCoach.xcodeproj
+
+# 5. Build & Run
+# Cmd+R
+```
+
+## ⚠️ Prérequis
+
+```bash
+# Ollama (LLM local)
+brew install ollama
+ollama serve &
+ollama pull qwen2.5:7b-instruct-q4_K_M
+```
+
 ## 🎯 Fonctionnalités
 
 - **Overlay always-on-top** — Fenêtre flottante toujours visible
