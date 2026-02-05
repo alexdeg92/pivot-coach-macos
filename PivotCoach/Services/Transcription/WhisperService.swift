@@ -63,11 +63,12 @@ class WhisperService: ObservableObject {
                 )
             )
             
-            if let text = results.first?.text?.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines),
-               !text.isEmpty,
-               !isNoiseOrSilence(text) {
-                latestTranscript = text
-                fullTranscript += text + " "
+            if let result = results.first {
+                let text = result.text.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+                if !text.isEmpty && !isNoiseOrSilence(text) {
+                    latestTranscript = text
+                    fullTranscript += text + " "
+                }
             }
         } catch {
             print("❌ Whisper error: \(error)")
