@@ -14,15 +14,14 @@ class CoachViewModel: ObservableObject {
     @Published var intent = ""
     @Published var emotion = "neutral"
     @Published var closingProbability = 50
-    @Published var currentContact: Contact?
     @Published var stealthMode = false
     @Published var audioLevel: Float = 0
     @Published var ollamaAvailable = false
-    @Published var hubspotConnected = false
     
     // Setup/Call mode
     @Published var showSetup = true
-    @Published var selectedHubSpotContact: HubSpotContact?
+    @Published var prospectName = ""
+    @Published var prospectType = "Restaurant"
     @Published var additionalContext = ""
     
     // MARK: - Services
@@ -130,7 +129,7 @@ class CoachViewModel: ObservableObject {
         
         Task {
             // 1. RAG lookup
-            let ragContext = vectorStore?.search(query: text, contactId: currentContact?.id, limit: 3)
+            let ragContext = vectorStore?.search(query: text, contactId: nil, limit: 3)
                 .map { $0.content }
                 .joined(separator: "\n") ?? ""
             
@@ -155,80 +154,53 @@ class CoachViewModel: ObservableObject {
     
     private func buildSystemPrompt(ragContext: String) -> String {
         var prompt = """
-        Tu es un coach de vente EXPERT pour Pivot, le logiciel tout-en-un de gestion pour restaurants au Québec.
-
-        🎯 TON RÔLE:
-        Écoute ce que le prospect dit et suggère LA meilleure réponse/contre-argument au vendeur.
-        Tu coaches en temps réel — le vendeur lit tes suggestions pendant l'appel.
-
-        💎 PROPOSITION DE VALEUR PIVOT (mémorise):
-        - TOUT-EN-UN: Horaires + Paie + Pourboires + Intégration POS (Clover, Square, Lightspeed)
-        - Gain de temps: 5-8h/semaine économisées sur l'admin
-        - Conformité Québec: Normes du travail, CNESST, vacances 4%/6% automatiques
-        - ROI rapide: Réduction erreurs de paie = économies immédiates
-        - Zéro double saisie: Le POS parle directement à la paie
-
-        ⚔️ CONCURRENTS (leurs faiblesses):
-        - 7shifts: PAS de paie intégrée → 2 systèmes à gérer, double saisie, erreurs
-        - Deputy: TRÈS cher pour ce que c'est, support en anglais, pas adapté Québec
-        - Homebase: Focus USA, pas de conformité québécoise, paie US seulement
-        - Excel/papier: Erreurs garanties, 10h+/semaine perdues, pas de visibilité temps réel
-
-        🗣️ STYLE DE RÉPONSE:
-        - 2-3 phrases MAXIMUM, punchy et direct
-        - Langage québécois naturel (pas de "nous vous proposons", plutôt "on t'offre")
-        - Toujours finir par une question ou un call-to-action clair
-
-        🚨 GESTION DES OBJECTIONS:
-
-        PRIX/COÛT:
-        → "Combien tu perds en erreurs de paie par mois? Pivot se paye tout seul en éliminant ça. On peut regarder ton cas ensemble?"
-
-        TROP COMPLEXE/PAS LE TEMPS:
-        → "Justement, on fait le setup AVEC toi en 48h. Après, tu sauves 5h/semaine. C'est quand ton rush de paie?"
-
-        J'AI DÉJÀ UN SYSTÈME:
-        → "Tu gères la paie comment en ce moment? [écoute] Donc [X heures] par semaine juste pour ça... Imagine récupérer ce temps."
-
-        JE VAIS Y PENSER:
-        → "Bien sûr! Qu'est-ce qui te ferait dire oui aujourd'hui? Je veux m'assurer de répondre à toutes tes questions."
-
-        MON ÉQUIPE VA RÉSISTER:
-        → "L'app employé est plus simple qu'Instagram. Ils voient leur horaire, poinçonnent, demandent des congés. Tes meilleurs employés vont adorer."
-
-        🎯 SIGNAUX DE CLOSING (suggère de closer):
-        - "Ça m'intéresse" / "C'est combien?" / "Comment ça marche?" / "On peut essayer?"
-        → Suggère: "Parfait! On te setup un essai gratuit cette semaine — mardi ou jeudi, c'est mieux pour toi?"
-
-        📊 RÈGLES D'OR:
-        1. Ne jamais critiquer directement un concurrent — soulève des QUESTIONS
-        2. Toujours ramener aux bénéfices CONCRETS (temps, argent, stress)
-        3. Utiliser "tu/toi" pas "vous" (approche québécoise)
-        4. Si le prospect mentionne un pain point → CREUSE avec une question
-        5. Suggère le prochain step naturel (démo, essai, call technique)
+        Tu es un coach commercial expert pour Pivot, un logiciel de gestion tout-en-un pour la restauration.
+        
+        ARGUMENTS CLÉS PIVOT:
+        - Tout-en-un: caisse, commandes, KDS cuisine, planning, stocks, comptabilité
+        - Intégration native: pas de modules à connecter, tout communique
+        - Adapté aux cuisines professionnelles: KDS robuste, gestion des tickets
+        - Support francophone réactif basé en France
+        - Prix transparent, sans frais cachés
+        - Migration assistée depuis les solutions existantes (Zelty, L'Addition, etc.)
+        - Formation incluse pour toute l'équipe
+        
+        OBJECTIONS FRÉQUENTES:
+        - "On a déjà un système" → Migration gratuite + formation, ROI rapide
+        - "C'est trop cher" → Comparer au coût total (logiciel + modules + maintenance)
+        - "Pas le temps de changer" → Accompagnement complet, équipe dédiée
+        - "On verra plus tard" → Créer l'urgence: haute saison, pertes actuelles
+        
+        RÈGLES STRICTES:
+        - Réponses COURTES: 2-3 phrases maximum
+        - Focus sur la VALEUR pour le client et son type d'établissement
+        - Si objection → reformuler en opportunité
+        - Terminer par une question ouverte OU un call-to-action clair
+        - Ton professionnel mais chaleureux
+        - Ne jamais mentir ou exagérer
         """
         
-        // HubSpot contact info
-        if let contact = selectedHubSpotContact {
-            prompt += """
+        // Prospect info
+        if !prospectName.isEmpty || prospectType != "Restaurant" {
+            prompt += "\n\nPROSPECT ACTUEL:"
+            if !prospectName.isEmpty {
+                prompt += "\n- Nom: \(prospectName)"
+            }
+            prompt += "\n- Type d'établissement: \(prospectType)"
             
-            
-            👤 CLIENT ACTUEL (HubSpot):
-            - Nom: \(contact.fullName)
-            - Entreprise: \(contact.company)
-            - Email: \(contact.email)
-            - Statut: \(contact.leadStatus ?? "Non défini")
-            Adapte ton approche selon le stade du deal!
-            """
-        } else if let contact = currentContact {
-            prompt += """
-            
-            
-            👤 CLIENT ACTUEL:
-            - Nom: \(contact.firstName) \(contact.lastName)
-            - Entreprise: \(contact.company)
-            - Stade: \(contact.dealStage ?? "Inconnu")
-            """
+            // Adapter les arguments au type
+            switch prospectType {
+            case "Restaurant":
+                prompt += "\n- Focus: KDS cuisine, gestion des services, réservations"
+            case "Bar":
+                prompt += "\n- Focus: rapidité caisse, gestion happy hour, inventaire boissons"
+            case "Café":
+                prompt += "\n- Focus: simplicité, gestion viennoiseries/stocks périssables"
+            case "Traiteur":
+                prompt += "\n- Focus: gestion commandes événements, devis, planning production"
+            default:
+                break
+            }
         }
         
         // Additional context from user
@@ -236,20 +208,17 @@ class CoachViewModel: ObservableObject {
             prompt += """
             
             
-            📝 CONTEXTE ADDITIONNEL (notes du vendeur):
+            NOTES PRÉ-APPEL:
             \(additionalContext)
-            Utilise ces infos pour personnaliser ta réponse!
             """
         }
         
-        // RAG context (PivotKnowledgeBase or previous notes)
         if !ragContext.isEmpty {
             prompt += """
             
             
-            📚 INFORMATIONS PERTINENTES (base de connaissances):
+            HISTORIQUE (notes précédentes):
             \(ragContext)
-            Réfère-toi à ces faits si pertinent à la conversation.
             """
         }
         
@@ -276,7 +245,7 @@ class CoachViewModel: ObservableObject {
             intent = "Question technique"
             emotion = "neutral"
             closingProbability = 55
-        } else if lower.contains("concurrent") || lower.contains("autre solution") || lower.contains("déjà") {
+        } else if lower.contains("concurrent") || lower.contains("autre solution") || lower.contains("déjà") || lower.contains("zelty") || lower.contains("l'addition") {
             intent = "Comparaison concurrence"
             emotion = "sceptique"
             closingProbability = 35
@@ -344,16 +313,6 @@ class CoachViewModel: ObservableObject {
         NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
     
-    // MARK: - HubSpot
-    
-    func syncHubSpotContacts() async {
-        // TODO: Implémenter la sync HubSpot
-    }
-    
-    func selectContact(_ contact: Contact) {
-        currentContact = contact
-    }
-    
     // MARK: - Reset
     
     func resetConversation() {
@@ -363,6 +322,9 @@ class CoachViewModel: ObservableObject {
         intent = ""
         emotion = "neutral"
         closingProbability = 50
+        prospectName = ""
+        prospectType = "Restaurant"
+        additionalContext = ""
         whisperService.reset()
     }
 }
