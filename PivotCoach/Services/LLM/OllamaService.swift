@@ -65,8 +65,10 @@ actor OllamaService {
     
     // MARK: - Streaming Generation
     
-    func generateStream(prompt: String, system: String) -> AsyncThrowingStream<String, Error> {
-        AsyncThrowingStream { continuation in
+    nonisolated func generateStream(prompt: String, system: String) -> AsyncThrowingStream<String, Error> {
+        let model = "qwen2.5:7b-instruct-q4_K_M"
+        let baseURL = URL(string: "http://127.0.0.1:11434")!
+        return AsyncThrowingStream { continuation in
             Task {
                 do {
                     let url = baseURL.appendingPathComponent("api/generate")
