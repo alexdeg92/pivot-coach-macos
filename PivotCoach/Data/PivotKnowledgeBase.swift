@@ -880,15 +880,15 @@ struct PivotKnowledgeBase {
             objectionFr: "J'ai besoin d'y réfléchir",
             rebuttal: "Of course - it's important to make the right decision. To help you think it through, what specific aspects are you weighing? Is it the cost, the implementation, or something else? I want to make sure you have all the information you need. Also, we do have a promotion ending [date] that I'd hate for you to miss if the timing works out.",
             rebuttalFr: "Bien sûr - c'est important de prendre la bonne décision. Pour vous aider à y réfléchir, quels aspects spécifiques pesez-vous? Est-ce le coût, l'implémentation, ou autre chose? Je veux m'assurer que vous avez toute l'information dont vous avez besoin. Aussi, nous avons une promotion qui se termine [date] que je ne voudrais pas que vous manquiez si le timing fonctionne.",
-            followUpQuestionsFr: [
-                "Qu'est-ce qui vous ferait dire oui aujourd'hui?",
-                "Y a-t-il des questions auxquelles je n'ai pas répondu?",
-                "Quel est votre calendrier pour prendre cette décision?"
-            ],
             followUpQuestions: [
                 "What would make you say yes today?",
                 "Are there questions I haven't answered?",
                 "What's your timeline for making this decision?"
+            ],
+            followUpQuestionsFr: [
+                "Qu'est-ce qui vous ferait dire oui aujourd'hui?",
+                "Y a-t-il des questions auxquelles je n'ai pas répondu?",
+                "Quel est votre calendrier pour prendre cette décision?"
             ]
         )
     ]
