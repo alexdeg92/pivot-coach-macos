@@ -20,6 +20,11 @@ class CoachViewModel: ObservableObject {
     @Published var ollamaAvailable = false
     @Published var hubspotConnected = false
     
+    // Setup/Call mode
+    @Published var showSetup = true
+    @Published var selectedHubSpotContact: HubSpotContact?
+    @Published var additionalContext = ""
+    
     // MARK: - Services
     private let audioCapture = SystemAudioCapture()
     private let whisperService = WhisperService()
@@ -161,7 +166,18 @@ class CoachViewModel: ObservableObject {
         - Ne jamais mentir ou exagérer
         """
         
-        if let contact = currentContact {
+        // HubSpot contact info
+        if let contact = selectedHubSpotContact {
+            prompt += """
+            
+            
+            CLIENT ACTUEL (HubSpot):
+            - Nom: \(contact.fullName)
+            - Entreprise: \(contact.company)
+            - Email: \(contact.email)
+            - Statut: \(contact.leadStatus ?? "Non défini")
+            """
+        } else if let contact = currentContact {
             prompt += """
             
             
@@ -172,11 +188,21 @@ class CoachViewModel: ObservableObject {
             """
         }
         
+        // Additional context from user
+        if !additionalContext.isEmpty {
+            prompt += """
+            
+            
+            CONTEXTE ADDITIONNEL:
+            \(additionalContext)
+            """
+        }
+        
         if !ragContext.isEmpty {
             prompt += """
             
             
-            CONTEXTE (notes précédentes):
+            HISTORIQUE (notes précédentes):
             \(ragContext)
             """
         }

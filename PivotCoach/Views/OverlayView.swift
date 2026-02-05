@@ -4,7 +4,9 @@ struct OverlayView: View {
     @ObservedObject var viewModel: CoachViewModel
     
     var body: some View {
-        if viewModel.stealthMode {
+        if viewModel.showSetup {
+            SetupOverlayView(viewModel: viewModel)
+        } else if viewModel.stealthMode {
             StealthView(viewModel: viewModel)
         } else {
             FullOverlayView(viewModel: viewModel)
@@ -209,10 +211,16 @@ struct FooterView: View {
             
             Spacer()
             
-            Button(action: { viewModel.showSummary() }) {
+            Button(action: {
+                Task {
+                    await viewModel.stopListening()
+                    viewModel.resetConversation()
+                    viewModel.showSetup = true
+                }
+            }) {
                 HStack(spacing: 4) {
-                    Image(systemName: "doc.text")
-                    Text("Résumé")
+                    Image(systemName: "phone.badge.plus")
+                    Text("Nouveau")
                 }
                 .font(.system(size: 13))
             }
