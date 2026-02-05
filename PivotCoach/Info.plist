@@ -2,27 +2,31 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleName</key>
-    <string>Pivot Coach</string>
-    <key>CFBundleIdentifier</key>
-    <string>ca.pivotapp.coach</string>
-    <key>CFBundleVersion</key>
-    <string>1.0</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleExecutable</key>
-    <string>PivotCoach</string>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>$(PRODUCT_NAME)</string>
+    <key>CFBundlePackageType</key>
+    <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
     <key>LSMinimumSystemVersion</key>
-    <string>13.0</string>
+    <string>$(MACOSX_DEPLOYMENT_TARGET)</string>
     <key>LSUIElement</key>
-    <false/>
+    <true/>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Pivot Coach a besoin du microphone pour la transcription vocale en temps réel.</string>
+    <string>Pivot Coach utilise le micro pour transcrire les conversations.</string>
     <key>NSScreenCaptureUsageDescription</key>
-    <string>Pivot Coach a besoin de l'enregistrement d'écran pour capturer l'audio des appels.</string>
-    <key>NSAppleEventsUsageDescription</key>
-    <string>Pivot Coach utilise l'automatisation pour l'intégration avec d'autres apps.</string>
+    <string>Pivot Coach capture l'audio système pour transcrire les appels téléphoniques.</string>
+    <key>NSPrincipalClass</key>
+    <string>NSApplication</string>
 </dict>
 </plist>

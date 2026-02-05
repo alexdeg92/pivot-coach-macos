@@ -1,188 +1,148 @@
-# 🎯 Pivot Coach - 100% Swift Native
+# Pivot Coach
 
-Application macOS native de coaching commercial IA, 100% offline.
+Application macOS de coaching commercial IA en temps réel.
 
-## Architecture
+## 🎯 Fonctionnalités
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     SwiftUI OVERLAY (NSPanel)                    │
-│  ┌──────────────┐ ┌──────────────┐ ┌─────────────────────────┐  │
-│  │ Transcription│ │ Suggestion   │ │ Analyse Client          │  │
-│  │ Live         │ │ Commerciale  │ │ Closing % │ Objections  │  │
-│  └──────────────┘ └──────────────┘ └─────────────────────────┘  │
-└────────────────────────────┬────────────────────────────────────┘
-                             │
-┌────────────────────────────┼────────────────────────────────────┐
-│                    SWIFT NATIVE LAYER                            │
-│  ┌────────────────┐  ┌────────────────┐  ┌──────────────────┐   │
-│  │ Audio Capture  │  │ Whisper.cpp    │  │ Ollama Client    │   │
-│  │ ScreenCapture  │→ │ STT Local      │→ │ LLM HTTP API     │   │
-│  │ Kit            │  │ (via Process)  │  │                  │   │
-│  └────────────────┘  └────────────────┘  └──────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-```
+- **Overlay always-on-top** — Fenêtre flottante toujours visible
+- **Capture audio système** — Écoute les appels (ScreenCaptureKit)
+- **Transcription locale** — WhisperKit, 100% offline
+- **LLM local** — Ollama, suggestions en temps réel
+- **RAG** — Contexte client depuis HubSpot
+- **Privacy-first** — Tout tourne en local
 
-## Prérequis
+## 📋 Prérequis
 
-- **macOS 13.0+** (Ventura ou plus récent)
-- **Xcode 15+**
-- **Ollama** installé et en cours d'exécution
-- **whisper.cpp** compilé avec le modèle `ggml-base.bin`
-
-## Installation
-
-### 1. Installer les dépendances
+### 1. Installer Ollama
 
 ```bash
-# Ollama
 brew install ollama
-ollama serve &
-ollama pull mistral:7b-instruct-q4_K_M
-
-# Whisper.cpp
-cd ~
-git clone https://github.com/ggerganov/whisper.cpp
-cd whisper.cpp
-make -j
-./models/download-ggml-model.sh base
+ollama serve
+ollama pull qwen2.5:7b-instruct-q4_K_M
 ```
 
-### 2. Ouvrir dans Xcode
+### 2. macOS 13+ (Ventura ou plus récent)
+
+Requis pour ScreenCaptureKit audio.
+
+## 🚀 Installation
+
+### Option A: Depuis Xcode
+
+1. **Ouvrir Xcode** (15.0+)
+2. **File → New → Project**
+3. Choisir **macOS → App**
+4. Configurer:
+   - Product Name: `PivotCoach`
+   - Team: (ton compte)
+   - Organization: `ca.pivotapp`
+   - Interface: **SwiftUI**
+   - Language: **Swift**
+   - ❌ Décocher "Include Tests"
+
+5. **Ajouter WhisperKit:**
+   - File → Add Package Dependencies
+   - URL: `https://github.com/argmaxinc/WhisperKit`
+   - Version: Up to Next Major
+
+6. **Copier les fichiers:**
+   - Remplacer le contenu de `PivotCoachApp.swift` par celui dans `PivotCoach/App/`
+   - Créer les dossiers: Views, ViewModels, Services, Models, Utilities
+   - Copier tous les fichiers Swift
+
+7. **Configurer Info.plist:**
+   - Ajouter les clés de `Info.plist` (permissions micro + screen capture)
+
+8. **Désactiver App Sandbox:**
+   - Target → Signing & Capabilities
+   - Supprimer "App Sandbox" (requis pour ScreenCaptureKit)
+
+9. **Build & Run:** `Cmd + R`
+
+### Option B: Script rapide
 
 ```bash
-cd pivot-coach-swift
-open PivotCoach.xcodeproj
+# Clone le projet
+cd ~/Desktop
+
+# Ouvre Xcode et crée le projet manuellement
+# Puis copie les fichiers depuis ce dossier
 ```
 
-Ou créer un nouveau projet Xcode:
-1. File → New → Project → macOS → App
-2. Nom: PivotCoach
-3. Interface: SwiftUI
-4. Language: Swift
-5. Copier les fichiers de `Sources/` dans le projet
+## 🔧 Configuration
 
-### 3. Configurer les Capabilities
+### Permissions requises
 
-Dans Xcode, aller dans le target → Signing & Capabilities:
-- ✅ Hardened Runtime
-- ✅ Audio Input (com.apple.security.device.audio-input)
+Au premier lancement, macOS demandera:
+1. **Microphone** — Accepter
+2. **Screen Recording** — Accepter (pour l'audio système)
 
-### 4. Configurer les permissions
+### Raccourcis clavier
 
-Le fichier `Info.plist` contient déjà:
-- `NSMicrophoneUsageDescription`
-- `NSScreenCaptureUsageDescription`
+| Raccourci | Action |
+|-----------|--------|
+| `⌘⇧L` | Démarrer/Arrêter l'écoute |
+| `⌘⇧O` | Afficher/Masquer l'overlay |
+| `⌘⇧C` | Copier la suggestion |
+| `⌘⇧S` | Mode discret |
 
-### 5. Build & Run
-
-```bash
-# Via Xcode
-Cmd + R
-
-# Ou via command line
-xcodebuild -scheme PivotCoach -configuration Release build
-```
-
-## Structure du projet
+## 📁 Structure
 
 ```
 PivotCoach/
-├── Sources/
-│   ├── PivotCoachApp.swift      # Point d'entrée + AppDelegate
-│   ├── ContentView.swift        # UI principale
-│   ├── AudioCaptureManager.swift # Capture audio (mic + système)
-│   ├── WhisperManager.swift     # Intégration whisper.cpp
-│   ├── OllamaClient.swift       # Client HTTP Ollama
-│   └── CoachState.swift         # État global de l'app
-├── Info.plist
-└── Resources/
+├── App/
+│   ├── PivotCoachApp.swift      # Entry point
+│   └── AppDelegate.swift        # Setup overlay + permissions
+├── Views/
+│   ├── OverlayWindowController.swift  # NSPanel always-on-top
+│   ├── OverlayView.swift        # SwiftUI UI
+│   └── SettingsView.swift       # Préférences
+├── ViewModels/
+│   └── CoachViewModel.swift     # État global + logique
+├── Services/
+│   ├── Audio/
+│   │   └── SystemAudioCapture.swift   # ScreenCaptureKit
+│   ├── Transcription/
+│   │   └── WhisperService.swift       # WhisperKit STT
+│   ├── LLM/
+│   │   └── OllamaService.swift        # Ollama HTTP
+│   └── RAG/
+│       ├── EmbeddingService.swift     # NaturalLanguage
+│       └── VectorStore.swift          # SQLite vector DB
+├── Models/
+│   └── Contact.swift            # Data models
+├── Utilities/
+│   └── KeyboardShortcuts.swift  # Global hotkeys
+└── Info.plist                   # Permissions
 ```
 
-## Composants
+## 🔌 HubSpot (optionnel)
 
-### AudioCaptureManager
-- Capture microphone via `AVAudioEngine`
-- Capture audio système via `ScreenCaptureKit` (macOS 13+)
-- Resampling automatique à 16kHz pour Whisper
-- Buffer circulaire avec overlap pour transcription continue
+Pour connecter HubSpot:
+1. Créer une app sur [HubSpot Developer](https://developers.hubspot.com/)
+2. Copier le Client ID
+3. Ouvrir Settings → HubSpot → Connecter
 
-### WhisperManager
-- Exécute `whisper.cpp` en subprocess
-- Génère des fichiers WAV temporaires
-- Transcription en français (`-l fr`)
-- Support des modèles: base, small, medium
+## ⚠️ Troubleshooting
 
-### OllamaClient
-- Communication HTTP avec Ollama (localhost:11434)
-- Prompt système optimisé pour coaching commercial
-- Parsing JSON des réponses LLM
-- Support streaming (optionnel)
-
-### Overlay UI
-- `NSPanel` avec `nonactivatingPanel` (ne prend pas le focus)
-- `alwaysOnTop` + `visibleOnAllWorkspaces`
-- Vibrancy macOS native (`NSVisualEffectView`)
-- Design cohérent avec macOS
-
-## Configuration avancée
-
-### Changer le modèle Ollama
-
-Dans `OllamaClient.swift`:
-```swift
-@Published var currentModel = "llama3:8b"  // ou "qwen2:7b"
-```
-
-### Changer le modèle Whisper
-
-Télécharger un modèle plus grand:
+### "Ollama non disponible"
 ```bash
-cd ~/whisper.cpp
-./models/download-ggml-model.sh small  # ou medium
-```
-
-Puis modifier `WhisperManager.swift` pour pointer vers le bon fichier.
-
-### Personnaliser le prompt
-
-Modifier `systemPrompt` dans `OllamaClient.swift` pour adapter le coaching à votre contexte.
-
-## Dépannage
-
-### "Ollama non connecté"
-```bash
-# Vérifier que Ollama tourne
+# Vérifie qu'Ollama tourne
 curl http://localhost:11434/api/tags
 
-# Redémarrer
-pkill ollama
+# Si non, lance-le
 ollama serve
 ```
 
-### "Whisper non trouvé"
-```bash
-# Compiler whisper.cpp
-cd ~/whisper.cpp
-make clean && make -j
-
-# Vérifier le binaire
-./main --help
-```
+### "Permission refusée"
+- System Settings → Privacy & Security → Screen Recording
+- Activer "PivotCoach"
+- Relancer l'app
 
 ### Pas de transcription
-- Vérifier les permissions microphone dans Préférences Système
-- Accorder l'accès "Enregistrement d'écran" pour la capture audio système
+- Vérifie que WhisperKit a téléchargé le modèle (~150MB)
+- Première utilisation = téléchargement automatique
 
-## Roadmap
+## 📄 License
 
-- [ ] Intégration whisper.cpp native (sans subprocess)
-- [ ] RAG avec cache HubSpot local
-- [ ] Raccourcis clavier globaux
-- [ ] Mode minimal (micro-overlay)
-- [ ] Export conversation PDF
-- [ ] Intégration calendrier
-
-## Licence
-
-Propriétaire - Pivot Inc.
+Propriétaire — Pivot Inc.
